@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Validation;
+
+use App\Validation\APIValidation;
+
+class RegisterValidation extends APIValidation
+{
+    protected const QUERY_RULES = [
+        "nome" => [
+            'label' => 'nome',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "email" => [
+            'label' => 'email',
+            'rules' => [
+                'required'
+            ]
+        ],
+        'senha' => [
+            'label' => 'senha',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.logradouro" => [
+            'label' => 'logradouro',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.numero" => [
+            'label' => 'numero',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.bairro" => [
+            'label' => 'bairro',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.cidade" => [
+            'label' => 'cidade',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.estado" => [
+            'label' => 'estado',
+            'rules' => [
+                'required'
+            ]
+        ],
+        "enderecos.*.cep" => [
+            'label' => 'cep',
+            'rules' => [
+                'required'
+            ]
+        ],
+
+    ];
+
+    public function getRequestRules(string $type): array
+    {
+        $rules = [
+            'QUERY' => self::QUERY_RULES,
+        ];
+        return $rules[$type] ?? self::QUERY_RULES;
+    }
+}

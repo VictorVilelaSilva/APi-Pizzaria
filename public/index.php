@@ -6,9 +6,6 @@
  *---------------------------------------------------------------
  */
 
-use App\Handlers\ExceptionHandler;
-
-
 $minPhpVersion = '8.1'; // If you update this, don't forget to update `spark`.
 if (version_compare(PHP_VERSION, $minPhpVersion, '<')) {
     $message = sprintf(
@@ -59,5 +56,6 @@ try {
 
     exit(CodeIgniter\Boot::bootWeb($paths));
 } catch (Throwable $th) {
-    (new ExceptionHandler($th, "PHPERR-PIX1"));
+    print_r($th);
+    exit;
 }

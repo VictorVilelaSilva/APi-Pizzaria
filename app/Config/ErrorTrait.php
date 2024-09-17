@@ -12,9 +12,9 @@ class ErrorTrait extends \Exception
     protected string|array $payload;
     protected int $statusCode;
 
-    public function __construct(string|array $payload, ?array $errors = [], $detail = [], $pending = [])
+    public function __construct(string $code, $errors = [], ?string $detail = null)
     {
-        ResponseTrait::Error($payload, $errors, $detail, $pending);
+        ResponseTrait::Error($code, $errors, $detail);
     }
 
     public function getPayload(): array

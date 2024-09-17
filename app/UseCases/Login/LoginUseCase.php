@@ -2,31 +2,26 @@
 
 namespace App\UseCases\Login;
 
-use App\DTO\LoginInputDTO;
-use App\DTO\LoginOutputDTO;
-use App\Entities\LoginEntity;
-use App\Repositories\ILoginRepository;
-use App\Validation\LoginValidation;
+use App\Models\UsuariosModel;
+use Config\ErrorTrait;
+
 
 class LoginUseCase
 {
-    private ILoginRepository $loginRepository;
-
-    public function __construct(ILoginRepository $loginRepository)
+    public function execute(array $loginBody): array
     {
-        $this->loginRepository = $loginRepository;
+        $usuarioModel = new UsuariosModel();
+        $usuarioData = $usuarioModel->findByEmail($loginBody['email']);
+        if (!$this->UsuarioExistVerification($usuarioData, $loginBody)) {
+            throw new ErrorTrait('ERROR-LOGIN-002');
+        }
+        return [
+            'nome' => $usuarioData['nome'],
+            'email' => $usuarioData['email'],
+        ];
     }
-
-    public function execute(LoginInputDTO $loginDTO): LoginOutputDTO
-    {     
-    	LoginValidation::execute('QUERY', (array)$loginDTO, 'APICMSWPIX01');
-
-        $entity = new LoginEntity((array) $loginDTO);
-        badRequest('ola');
-
-        $outputEntity = $this->loginRepository->Login($entity);
-
-        return new LoginOutputDTO((array)$outputEntity);
-        
+    private function UsuarioExistVerification($usuarioData, $loginBody): bool
+    {
+        return $usuarioData && password_verify($loginBody['senha'], $usuarioData['senha']);
     }
 }

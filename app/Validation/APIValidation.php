@@ -2,6 +2,7 @@
 
 namespace App\Validation;
 
+use App\Handlers\ErrosCode;
 use Config\ErrorTrait;
 
 abstract class APIValidation
@@ -20,7 +21,7 @@ abstract class APIValidation
 
     if (!$isValid) {
       throw new ErrorTrait(
-        payload: $errorCode,
+        $errorCode,
         errors: $validation->getErrors()
       );
     }

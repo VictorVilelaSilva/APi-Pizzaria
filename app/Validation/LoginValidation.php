@@ -7,16 +7,16 @@ use App\Validation\APIValidation;
 class LoginValidation extends APIValidation
 {
     protected const QUERY_RULES = [
-        "username" => [
-            'label' => 'username',
+        "email" => [
+            'label' => 'email',
             'rules' => [
                 'required'
             ]
         ],
-        'passowrd' => [
-            'label' => 'password',
+        'senha' => [
+            'label' => 'senha',
             'rules' => [
-                'required',
+                'required'
             ]
         ]
     ];
