@@ -22,7 +22,7 @@ Esta é uma API de Pizzaria desenvolvida em PHP utilizando o framework CodeIgnit
     composer install
     ```
     
-> [!IMPORTANTE]
+> [!IMPORTANT]
 > Caso tenha problemas ao executar os comandos do Composer, copie o arquivo `php.ini` do repositório e substitua pelo seu arquivo `php.ini` local.
 > O arquivo `php.ini` localiza-se no mesmo diretório que foi adicionado o PHP nas variáveis de ambiente do sistema operacional.
 
