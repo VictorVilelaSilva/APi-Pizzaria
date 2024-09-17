@@ -38,7 +38,32 @@ A API estará disponível em `http://localhost:8080`.
 ## Endpoints
 * Login
 POST - http://localhost:8080/usuario/login
+    Body:
+    ```json
+    {
+        "nome": "",
+        "email":"@gmail.com",
+        "senha": "",
+        "enderecos": [
+            {
+            "logradouro": "",
+            "numero": "",
+            "bairro": "",
+            "cidade": "",
+            "estado": "M",
+            "cep": ""
+            }
+        ]
+    }
+    ```
 * Cadastro
 POST - http://localhost:8080/usuario/register
+    Body:
+    ```json
+    {
+        "email": "victorasadasdasd@gmail.com",
+        "senha": "34222750v"
+    }
+    ```
 
 
