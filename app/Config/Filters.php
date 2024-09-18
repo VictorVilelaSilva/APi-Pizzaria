@@ -30,7 +30,7 @@ class Filters extends BaseFilters
         'honeypot'      => Honeypot::class,
         'invalidchars'  => InvalidChars::class,
         'secureheaders' => SecureHeaders::class,
-        'cors'          => Cors::class,
+        'cors'          => \App\Filters\Cors::class,
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
@@ -51,6 +51,7 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
+            'cors',       // CORS Support
             'forcehttps', // Force Global Secure Requests
             'pagecache',  // Web Page Caching
         ],
@@ -69,6 +70,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'cors', 
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',

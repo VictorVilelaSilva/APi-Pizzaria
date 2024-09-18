@@ -25,37 +25,37 @@ class RegisterValidation extends APIValidation
                 'required'
             ]
         ],
-        "enderecos.*.logradouro" => [
+        "logradouro" => [
             'label' => 'logradouro',
             'rules' => [
                 'required'
             ]
         ],
-        "enderecos.*.numero" => [
+        "numero" => [
             'label' => 'numero',
             'rules' => [
                 'required'
             ]
         ],
-        "enderecos.*.bairro" => [
+        "bairro" => [
             'label' => 'bairro',
             'rules' => [
                 'required'
             ]
         ],
-        "enderecos.*.cidade" => [
+        "cidade" => [
             'label' => 'cidade',
             'rules' => [
                 'required'
             ]
         ],
-        "enderecos.*.estado" => [
+        "estado" => [
             'label' => 'estado',
             'rules' => [
                 'required'
             ]
         ],
-        "enderecos.*.cep" => [
+        "cep" => [
             'label' => 'cep',
             'rules' => [
                 'required'

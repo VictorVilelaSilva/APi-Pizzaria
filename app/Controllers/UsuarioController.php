@@ -29,10 +29,11 @@ class UsuarioController extends ResourceController
 	{
 		$bodyRequest = $this->request->getJSON(true);
 		RegisterValidation::execute('QUERY', $bodyRequest, 'ERROR-REGISTER-001');
-		$useCaseReturn = (new RegisterUseCase())->execute($bodyRequest);
+		$data = (new RegisterUseCase())->execute($bodyRequest);
 		return $this->respond(
 			[
-				'message'       => 'Registro realizado com sucesso'
+				'message'       => 'Registro realizado com sucesso',
+				'data'          => $data
 			]
 		);
 	}

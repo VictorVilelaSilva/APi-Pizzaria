@@ -9,7 +9,7 @@ use Config\ErrorTrait;
 
 class RegisterUseCase
 {
-    public function execute(array $registerBody): void
+    public function execute(array $registerBody): array
     {
         try {
             $usuarioModel = new UsuariosModel();
@@ -23,10 +23,22 @@ class RegisterUseCase
                 'senha'      => $registerBody['senha'],
                 'created_at' => date('Y-m-d H:i:s')
             ]);
-            foreach ($registerBody['enderecos'] as &$endereco) {
-                $endereco['id_usuario'] = $idUsuario;
-            }
-            $enderecoModel->insertBatch($registerBody['enderecos']);
+            $endereco['id_usuario'] = $idUsuario;
+            $enderecoModel->insert(
+                [
+                    'id_usuario' => $idUsuario,
+                    'logradouro' => $registerBody['logradouro'],
+                    'numero'     => $registerBody['numero'],
+                    'bairro'     => $registerBody['bairro'],
+                    'cidade'     => $registerBody['cidade'],
+                    'estado'     => $registerBody['estado'],
+                    'cep'        => $registerBody['cep']
+                ]
+            );
+            return[
+                'id_usuario' => $idUsuario,
+                'nome'       => $registerBody['nome']
+            ];
         } catch (\Exception $e) {
             throw new ErrorTrait('ERROR-REGISTER-003');
         }

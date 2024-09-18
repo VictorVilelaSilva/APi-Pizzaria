@@ -16,6 +16,7 @@ class LoginUseCase
             throw new ErrorTrait('ERROR-LOGIN-002');
         }
         return [
+            'id' => $usuarioData['id'],
             'nome' => $usuarioData['nome'],
             'email' => $usuarioData['email'],
         ];

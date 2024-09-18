@@ -40,29 +40,26 @@ A API estará disponível em `http://localhost:8080`.
 POST - http://localhost:8080/usuario/login
     Body:
     ```json
-    {
-        "nome": "",
-        "email":"@gmail.com",
-        "senha": "",
-        "enderecos": [
-            {
-            "logradouro": "",
-            "numero": "",
-            "bairro": "",
-            "cidade": "",
-            "estado": "M",
-            "cep": ""
-            }
-        ]
+     {
+        "email": "victorasadasdasd@gmail.com",
+        "senha": "34222750v"
     }
+    
     ```
 * Cadastro
 POST - http://localhost:8080/usuario/register
     Body:
     ```json
     {
-        "email": "victorasadasdasd@gmail.com",
-        "senha": "34222750v"
+        "nome": "",
+        "email":"@gmail.com",
+        "senha": "",
+        "logradouro": "",
+        "numero": "",
+        "bairro": "",
+        "cidade": "",
+        "estado": "M",
+        "cep": ""
     }
     ```
 
