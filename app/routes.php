@@ -14,3 +14,12 @@ $routes->group(
         $routes->post('register', 'UsuarioController::Register');
     },
 );
+
+$routes->group(
+    'pizza',
+    ['namespace' => 'App\Controllers'],
+    function ($routes) {
+        $routes->get('', 'PizzaController::GetAllPizzas');
+        $routes->put('(:segment)', 'PizzaController::EditPizza/$1');
+    },
+);

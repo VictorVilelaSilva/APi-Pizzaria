@@ -26,6 +26,11 @@ class Pizzas extends Migration
             'ingredientes' => [
                 'type' => 'TEXT',
             ],
+            'img_url' => [
+                'type' => 'VARCHAR',
+                'constraint' => 'TEXT',
+                'null' => true,
+            ],
             'created_at' => [
                 'type' => 'DATETIME',
                 'null' => true,
