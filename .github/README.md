@@ -152,25 +152,25 @@ Cada sub-página de endpoint contém:
 
 ## 📈 Benefícios
 
-| Antes | Depois |
-|-------|--------|
-| ⏱️ 30-60 min por task | ⏱️ 2-3 min automático |
+| Antes                   | Depois                 |
+| ----------------------- | ---------------------- |
+| ⏱️ 30-60 min por task    | ⏱️ 2-3 min automático   |
 | 📝 Formato inconsistente | 📝 Template padronizado |
-| 🤔 Depende de memória | 🤖 Analisa código real |
-| 🔗 Links manuais | 🔗 Tudo linkado |
-| 📊 Fácil esquecer | 📊 100% automático |
+| 🤔 Depende de memória    | 🤖 Analisa código real  |
+| 🔗 Links manuais         | 🔗 Tudo linkado         |
+| 📊 Fácil esquecer        | 📊 100% automático      |
 
 ## 💡 Diferenças do Chatmode Manual
 
-| Aspecto | Chatmode Manual | Workflow Automático |
-|---------|----------------|---------------------|
-| **Trigger** | Comando no chat | Merge para main |
-| **Análise** | Você descreve | Claude analisa código |
-| **Template** | Segue chatmode | **Segue chatmode** |
-| **Endpoints** | Você lista | Auto-detecta |
-| **Criação** | Uma página | Página + sub-páginas |
-| **Timing** | Quando quiser | Sempre no merge |
-| **Idioma** | PT-BR | PT-BR |
+| Aspecto       | Chatmode Manual | Workflow Automático   |
+| ------------- | --------------- | --------------------- |
+| **Trigger**   | Comando no chat | Merge para main       |
+| **Análise**   | Você descreve   | Claude analisa código |
+| **Template**  | Segue chatmode  | **Segue chatmode**    |
+| **Endpoints** | Você lista      | Auto-detecta          |
+| **Criação**   | Uma página      | Página + sub-páginas  |
+| **Timing**    | Quando quiser   | Sempre no merge       |
+| **Idioma**    | PT-BR           | PT-BR                 |
 
 ## ✨ Recursos Especiais
 
@@ -224,13 +224,13 @@ Aparece automaticamente com:
 
 ## 🚨 Troubleshooting Rápido
 
-| Problema | Solução |
-|----------|---------|
-| "Secret not configured" | Adicionar secret no GitHub |
-| "Notion 404" | Compartilhar página com integração |
-| "Notion 401" | Verificar token da integração |
-| "Claude error" | Verificar créditos e API key |
-| Sem endpoints | Normal se não modificou rotas |
+| Problema                | Solução                            |
+| ----------------------- | ---------------------------------- |
+| "Secret not configured" | Adicionar secret no GitHub         |
+| "Notion 404"            | Compartilhar página com integração |
+| "Notion 401"            | Verificar token da integração      |
+| "Claude error"          | Verificar créditos e API key       |
+| Sem endpoints           | Normal se não modificou rotas      |
 
 ## 📚 Documentação de Apoio
 
