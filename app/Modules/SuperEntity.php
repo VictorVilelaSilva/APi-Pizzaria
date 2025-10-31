@@ -4,7 +4,6 @@ namespace App\Modules;
 
 use CodeIgniter\Entity\Entity;
 
-helper(["format", "str"]);
 class SuperEntity extends Entity
 {
     /**
@@ -58,7 +57,6 @@ class SuperEntity extends Entity
         // Sobrescrevendo os casts para formatar:
         if (array_key_exists($attribute, $this->casts)) {
             $castInto = $this->casts[$attribute];
-            if ($castInto === 'date')  return dateToYMD($value);
             // if ($castInto === 'get')  return convertStringToFloat($value);
             if ($method === 'set' && $castInto === 'value')  return convertStringToDouble($value);
             if ($method === 'set' && $castInto === 'moneyToShow')  return moneyToShow($value);
@@ -67,8 +65,6 @@ class SuperEntity extends Entity
             if ($method === 'set' && $castInto === 'cpfcnpjToShow')  return cpfcnpjToShow($value);
             if ($method === 'set' && $castInto === 'phoneToShow')  return phoneToShow($value);
             if ($method === 'set' && $castInto === 'cepToShow')  return cepToShow($value);
-            if ($method === 'set' && $castInto === 'id')  return getIdFromObject($value);
-            if ($method === 'set' && $castInto === 'ids')  return getIdsFromObjects($value);
             if ($castInto === 'removeEspecials')  return removeEspecials($value);
             if ($castInto === 'removeMask')  return removeNonNumeric($value);
         }
