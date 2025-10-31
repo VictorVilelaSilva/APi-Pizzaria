@@ -8,6 +8,11 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->set404Override('App\Controllers\ErrorsController::show404');
 
-require APPPATH . 'Routes.php';
-    
+$directory = APPPATH . 'Modules';
 
+$dirIterator = new DirectoryIterator($directory);
+foreach ($dirIterator as $fileInfo) {
+    if ($fileInfo->isDir() && !$fileInfo->isDot()) {
+        require $fileInfo->getPathname() . DIRECTORY_SEPARATOR . 'Routes.php';
+    }
+}
