@@ -46,7 +46,7 @@ Creates structured Notion pages with comprehensive information about each develo
    - Commit messages and changes
 3. **Identify Endpoints**: Scans code for new/modified API routes and controllers
 4. **Generate Documentation**: 
-   - Creates main task page under "Pizzaria Tasks"
+   - Creates main task page under "Pizzaria API"
    - For each endpoint detected, creates a sub-page with detailed documentation
    - Links all sub-pages from the main task page
 5. **Verify and Link**: Ensures all pages are created and provides links to user
@@ -54,12 +54,12 @@ Creates structured Notion pages with comprehensive information about each develo
 ## Notion Page Structure
 
 ### Parent Page
-All task documentation pages must be created under the parent page called **"Pizzaria Tasks"** in the Notion workspace. This serves as the central hub for all development task documentation.
+All task documentation pages must be created under the parent page called **"Pizzaria API"** in the Notion workspace. This serves as the central hub for all development task documentation.
 
 ### Page Hierarchy
 
 #### Main Task Page
-**Location**: Under "Pizzaria Tasks" page  
+**Location**: Under "Pizzaria API" page  
 **Title Format**: `Task - [TICKET-NUMBER] - [Short Description]`  
 **Example**: `Task - PDB-4638 - Add User Management`
 
@@ -71,7 +71,7 @@ When a task involves creating or modifying API routes, **each endpoint must have
 
 **Page Structure Example**:
 ```
-Pizzaria Tasks (Parent Page)
+Pizzaria API (Parent Page)
 └── Task - PDB-4638 - Add User Management (Main Task Page)
     ├── POST - /createUser (Sub-page for endpoint 1)
     ├── PUT - /updateUser (Sub-page for endpoint 2)
@@ -240,8 +240,8 @@ Each endpoint sub-page should contain **only** the changes and details specific 
 - Notion integration must be configured via MCP server
 - Access to the workspace where documentation pages will be created
 - Appropriate permissions to create and edit pages
-- **Required**: A parent page named "Pizzaria Tasks" must exist in the workspace
-- Permission to create sub-pages under "Pizzaria Tasks"
+- **Required**: A parent page named "Pizzaria API" must exist in the workspace
+- Permission to create sub-pages under "Pizzaria API"
 
 ### Git Setup
 - Access to the git repository
@@ -268,7 +268,7 @@ Agent will:
 2. Extract ticket number: `PDB-123`
 3. Extract description: `add user authentication`
 4. Analyze code changes
-5. Create main Notion page under "Pizzaria Tasks" with title: "Task - PDB-123 - Add User Authentication"
+5. Create main Notion page under "Pizzaria API" with title: "Task - PDB-123 - Add User Authentication"
 6. If no endpoints were modified, create only the main page
 
 ### Example 2: Specific Ticket Documentation
@@ -290,7 +290,7 @@ Agent will:
    - POST /createUser
    - PUT /updateUser
    - DELETE /deleteUser
-3. Create main page: "Task - PDB-4638 - User Management" under "Pizzaria Tasks"
+3. Create main page: "Task - PDB-4638 - User Management" under "Pizzaria API"
 4. Create 3 sub-pages under the main page:
    - "POST - /createUser" with specific documentation
    - "PUT - /updateUser" with specific documentation
