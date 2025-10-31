@@ -3,6 +3,7 @@
 namespace Modules\Usuario\Controllers;
 
 use App\DTO\LoginInputDTO;
+use App\Libraries\JWT\JWTService;
 use App\Repositories\CI4Model\LoginRepository;
 use App\UseCases\Login\LoginUseCase;
 use App\UseCases\Register\RegisterUseCase;
@@ -17,10 +18,19 @@ class UsuarioController extends ResourceController
         $bodyRequest = $this->request->getJSON(true);
         LoginValidation::execute('QUERY', $bodyRequest, 'ERROR-LOGIN-001');
         $useCaseReturn = (new LoginUseCase())->execute($bodyRequest);
+        $jwtService = new JWTService();
+        $token = $jwtService->generateToken([
+            'id' => $useCaseReturn['id'] ?? null,
+            'email' => $useCaseReturn['email'] ?? $bodyRequest['email'],
+            'nome' => $useCaseReturn['nome'] ?? null,
+        ]);
+
         return $this->respond(
             [
-                'message'       => 'Login realizado com sucesso',
-                'data'          => $useCaseReturn
+                'message' => 'Login realizado com sucesso',
+                'data' => $useCaseReturn,
+                'token' => $token,
+                'token_type' => 'Bearer'
             ]
         );
     }
