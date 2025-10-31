@@ -306,6 +306,8 @@ Agent will:
 4. **Test First**: Document after testing to include accurate examples
 5. **Be Specific**: Add manual details for complex business logic
 6. **Link Everything**: Connect Jira, PR, and Notion pages for easy navigation
+7. **Avoid writing future implementation details**: Focus on what was done, not what will be done
+8. **Don't do checklists of tasks**: Summarize the work instead of listing tasks
 
 ## Troubleshooting
 
