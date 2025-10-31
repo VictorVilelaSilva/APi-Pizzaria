@@ -1,0 +1,211 @@
+name: Auto-Document on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  document-task:
+    # Only run if the PR was merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for git log analysis
+          ref: main
+
+      - name: Extract task information
+        id: extract-info
+        run: |
+          # Get the source branch name from the PR
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          # Extract ticket number (e.g., PDB-123 or PDB4193 from branch name)
+          TICKET_NUMBER=$(echo "$BRANCH_NAME" | grep -oP '(?<=/)?[A-Z]+-?[0-9]+(?=-)' || echo "")
+          echo "ticket_number=$TICKET_NUMBER" >> $GITHUB_OUTPUT
+
+          # Extract short description
+          SHORT_DESC=$(echo "$BRANCH_NAME" | sed 's/.*\/[A-Z]*-\?[0-9]*-//' | tr '-' ' ')
+          echo "short_description=$SHORT_DESC" >> $GITHUB_OUTPUT
+
+          # Get PR information
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_url=${{ github.event.pull_request.html_url }}" >> $GITHUB_OUTPUT
+          echo "author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+
+          # Get merge commit SHA for analyzing changes
+          echo "merge_sha=${{ github.event.pull_request.merge_commit_sha }}" >> $GITHUB_OUTPUT
+
+          echo "Extracted: Ticket=$TICKET_NUMBER, Branch=$BRANCH_NAME"
+
+      - name: Analyze code changes
+        id: analyze-changes
+        run: |
+          # Get the base SHA (before merge) and head SHA (after merge)
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # Get list of changed files
+          echo "Changed files:" > changes.txt
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" >> changes.txt
+
+          # Get detailed diff
+          git diff "$BASE_SHA" "$HEAD_SHA" > full-diff.txt
+
+          # Count changes
+          FILES_CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | wc -l)
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+
+          # Detect endpoints (looking for Routes.php or controller files)
+          ROUTES_CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '(Routes\.php|Controller\.php)' || echo "")
+          if [ -n "$ROUTES_CHANGED" ]; then
+            echo "endpoints_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "endpoints_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Analyzed $FILES_CHANGED changed files"
+
+      - name: Get commit messages
+        id: commits
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # Get all commit messages from the PR
+          echo "Commit History:" > commits.txt
+          git log --pretty=format:"%h - %s (%an, %ar)" "$BASE_SHA".."$HEAD_SHA" >> commits.txt
+
+          cat commits.txt
+
+      - name: Prepare documentation payload
+        id: prepare-payload
+        run: |
+          # Create a JSON payload with all the extracted information
+          cat > documentation-payload.json << EOF
+          {
+            "ticket_number": "${{ steps.extract-info.outputs.ticket_number }}",
+            "branch_name": "${{ steps.extract-info.outputs.branch_name }}",
+            "short_description": "${{ steps.extract-info.outputs.short_description }}",
+            "pr_number": "${{ steps.extract-info.outputs.pr_number }}",
+            "pr_title": "${{ steps.extract-info.outputs.pr_title }}",
+            "pr_url": "${{ steps.extract-info.outputs.pr_url }}",
+            "author": "${{ steps.extract-info.outputs.author }}",
+            "files_changed": ${{ steps.analyze-changes.outputs.files_changed }},
+            "endpoints_detected": ${{ steps.analyze-changes.outputs.endpoints_detected }},
+            "merge_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "repository": "${{ github.repository }}"
+          }
+          EOF
+
+          cat documentation-payload.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install anthropic requests
+
+      - name: Generate documentation with Claude
+        id: generate-documentation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
+        run: |
+          # Check if required secrets are configured
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⚠️  ANTHROPIC_API_KEY not configured"
+            echo "Documentation will not be created automatically."
+            echo "Please add the following secrets to your repository:"
+            echo "  - ANTHROPIC_API_KEY (your Claude API key)"
+            echo "  - NOTION_API_KEY (your Notion integration token)"
+            echo "  - NOTION_PARENT_PAGE_ID (ID of your 'Pizzaria API' page)"
+            exit 0
+          fi
+
+          if [ -z "$NOTION_API_KEY" ]; then
+            echo "⚠️  NOTION_API_KEY not configured"
+            exit 0
+          fi
+
+          if [ -z "$NOTION_PARENT_PAGE_ID" ]; then
+            echo "⚠️  NOTION_PARENT_PAGE_ID not configured"
+            exit 0
+          fi
+
+          # All secrets are configured, run the documenter
+          echo "🚀 Generating documentation..."
+          python3 .github/scripts/claude-documenter.py
+
+          # Check if the script created the URL file
+          if [ -f "notion-page-url.txt" ]; then
+            NOTION_URL=$(cat notion-page-url.txt)
+            echo "notion_url=$NOTION_URL" >> $GITHUB_OUTPUT
+            echo "✅ Documentation created at: $NOTION_URL"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-data
+          path: |
+            documentation-payload.json
+            changes.txt
+            commits.txt
+            full-diff.txt
+          retention-days: 30
+
+      - name: Comment on PR
+        if: steps.extract-info.outputs.ticket_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ticketNumber = '${{ steps.extract-info.outputs.ticket_number }}';
+            const filesChanged = '${{ steps.analyze-changes.outputs.files_changed }}';
+            const notionUrl = '${{ steps.generate-documentation.outputs.notion_url }}';
+
+            let body = `## 📚 Documentation Status\n\n` +
+                      `**Ticket**: ${ticketNumber}\n` +
+                      `**Files Changed**: ${filesChanged}\n\n`;
+
+            if (notionUrl) {
+              body += `✅ **Documentation created automatically!**\n\n` +
+                      `📄 [View Notion Documentation](${notionUrl})\n\n` +
+                      `The documentation was generated using Claude AI and includes:\n` +
+                      `- Task overview and summary\n` +
+                      `- Technical changes analysis\n` +
+                      `- API endpoints (if detected)\n` +
+                      `- Database changes\n` +
+                      `- Business logic highlights\n\n` +
+                      `> 💡 **Tip**: For detailed endpoint documentation, use the Documenter chatmode to create sub-pages manually if needed.`;
+            } else {
+              body += `⚠️ **Automatic documentation not configured**\n\n` +
+                      `Documentation data has been collected but automatic page creation is not enabled.\n\n` +
+                      `To enable:\n` +
+                      `1. Add \`ANTHROPIC_API_KEY\` to repository secrets\n` +
+                      `2. Add \`NOTION_API_KEY\` to repository secrets\n` +
+                      `3. Add \`NOTION_PARENT_PAGE_ID\` to repository secrets\n\n` +
+                      `See \`.github/workflows/README.md\` for detailed setup instructions.`;
+            }
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
