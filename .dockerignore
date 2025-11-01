@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Node
+node_modules
+npm-debug.log
+
+# Composer
+vendor
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Cache and logs
+writable/cache/*
+writable/logs/*
+writable/session/*
+writable/uploads/*
+!writable/cache/.htaccess
+!writable/logs/.htaccess
+!writable/session/.htaccess
+!writable/uploads/.htaccess
+
+# Tests
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+*.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Others
+.DS_Store
+Thumbs.db
