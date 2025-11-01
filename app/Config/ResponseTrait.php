@@ -27,36 +27,36 @@ final class ResponseTrait
         return null;
     }
 
-    public static function Error(string $code, $errors = [],?string $detail = null)
+    public static function Error(string $code, $errors = [], ?string $detail = null)
     {
         $message = '';
-        $detail =(new ErrosCode())->getError($code);
+        $detail = (new ErrosCode())->getError($code);
         if ($detail) {
             $message = $detail;
         } else {
-            $message = $code; 
+            $message = $code;
         }
-        
+
         $response = [
             'success' => false,
             'code'    => $code,
-            'message' => $message, 
+            'message' => $message,
         ];
-    
+
         if (!empty($errors)) {
             $response['errors'] = [];
             foreach ($errors as $message) {
                 $response['errors'][] = $message;
             }
         }
-    
+
         if (!empty($pending)) {
             $response['pending'] = $pending;
         }
-    
+
         $responseService = service('response');
         $responseService->setJSON($response);
-        $responseService->setStatusCode(500); 
+        $responseService->setStatusCode(500);
         $responseService->send();
         die;
     }
