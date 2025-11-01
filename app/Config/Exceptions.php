@@ -101,6 +101,11 @@ class Exceptions extends BaseConfig
      */
     public function handler(int $statusCode, Throwable $exception): ExceptionHandlerInterface
     {
+        // Handler customizado para ErrorTrait
+        if ($exception instanceof \Config\ErrorTrait) {
+            return new \App\Handlers\ErrorTraitHandler($this);
+        }
+
         return new ExceptionHandler($this);
     }
 }

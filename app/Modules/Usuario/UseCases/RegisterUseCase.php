@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCases\Register;
+namespace App\Modules\Usuario\UseCases;
 
 use App\Models\enderecosModel;
 use App\Models\UsuariosModel;
@@ -35,7 +35,7 @@ class RegisterUseCase
                     'cep'        => $registerBody['cep']
                 ]
             );
-            return[
+            return [
                 'id_usuario' => $idUsuario,
                 'nome'       => $registerBody['nome']
             ];
