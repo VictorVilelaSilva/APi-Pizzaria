@@ -118,7 +118,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install anthropic requests
+          pip install anthropic httpx
 
       - name: Generate documentation with Claude
         id: generate-documentation

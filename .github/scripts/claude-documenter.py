@@ -9,7 +9,7 @@ import os
 import json
 import sys
 from anthropic import Anthropic
-import requests
+import httpx
 from datetime import datetime
 
 # Configuration
@@ -37,7 +37,7 @@ except:
     full_diff = "Diff too large to include"
 
 def create_notion_page(parent_id, title, content_blocks):
-    """Create a page in Notion"""
+    """Create a page in Notion using HTTPX"""
     url = f"{NOTION_API_BASE}/pages"
     headers = {
         'Authorization': f'Bearer {NOTION_API_KEY}',
@@ -57,9 +57,10 @@ def create_notion_page(parent_id, title, content_blocks):
         'children': content_blocks
     }
     
-    response = requests.post(url, headers=headers, json=data)
+    with httpx.Client(timeout=300.0) as client:  # 5 minutes timeout
+        response = client.post(url, headers=headers, json=data)
     
-    if not response.ok:
+    if response.status_code not in [200, 201]:
         print(f"❌ Notion API Error: {response.status_code}")
         print(response.text)
         raise Exception(f"Failed to create Notion page: {response.text}")
@@ -186,69 +187,27 @@ def ask_claude_for_analysis(additional_files=[]):
 
         Return ONLY valid JSON, no markdown formatting."""
 
-    # Construir conteúdo da mensagem com arquivos (se houver)
-    content = []
     
-    # Adicionar arquivos primeiro (imagens/PDFs)
-    for file_path in additional_files:
-        if not os.path.exists(file_path):
-            print(f"⚠️  Arquivo não encontrado: {file_path}")
-            continue
-        
-        file_ext = os.path.splitext(file_path)[1].lower()
-        
-        # Arquivos de imagem/PDF (Vision API)
-        if file_ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf']:
-            import base64
-            with open(file_path, 'rb') as f:
-                file_data = base64.standard_b64encode(f.read()).decode('utf-8')
-            
-            # Mapear tipo de mídia
-            media_type_map = {
-                '.pdf': 'application/pdf',
-                '.png': 'image/png',
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.gif': 'image/gif',
-                '.webp': 'image/webp'
-            }
-            
-            media_type = media_type_map.get(file_ext)
-            doc_type = "document" if file_ext == '.pdf' else "image"
-            
-            content.append({
-                "type": doc_type,
-                "source": {
-                    "type": "base64",
-                    "media_type": media_type,
-                    "data": file_data
-                }
-            })
-            print(f"📎 Arquivo anexado: {os.path.basename(file_path)} ({doc_type})")
-        
-        # Arquivos de texto (adicionar ao prompt)
-        elif file_ext in ['.txt', '.md', '.json', '.php', '.py', '.js']:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                file_content = f.read()
-            
-            prompt += f"\n\n# Arquivo anexado: {os.path.basename(file_path)}\n```\n{file_content[:10000]}\n```"
-            print(f"📄 Arquivo de texto anexado: {os.path.basename(file_path)}")
+    # Use streaming to avoid timeout issues
+    print("🔄 Enviando request para Claude API com streaming habilitado...")
     
-    # Adicionar o prompt de texto
-    content.append({
-        "type": "text",
-        "text": prompt
-    })
-    
-    message = client.messages.create(
-        model="claude-opus-4-1-20250805",
+    with client.messages.stream(
+        model="claude-opus-4-20250514",
         max_tokens=20000,
         messages=[
-            {"role": "user", "content": content if len(content) > 1 else prompt}
+            {"role": "user", "content": prompt}
         ]
-    )
+    ) as stream:
+        print("📥 Recebendo resposta streaming...")
+        response_text = ""
+        
+        for text in stream.text_stream:
+            response_text += text
+            print(".", end="", flush=True)  # Show progress
+        
+        print("\n✅ Claude finalizou a análise")
     
-    response_text = message.content[0].text
+    print("📊 Processando resposta JSON...")
     
     # Remove markdown code blocks if present
     if response_text.startswith('```'):
