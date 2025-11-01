@@ -1,7 +1,7 @@
 <?php
 
-use App\Controllers\UsuarioController;
 use Config\Services;
+use Modules\Usuario\Controllers\UsuarioController;
 
 $routes = Services::routes();
 

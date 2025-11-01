@@ -3,11 +3,10 @@
 use App\Models\UsuariosModel;
 
 /**
- * Testes unitários para o UsuariosModel
+ * Testes de integração para o UsuariosModel
  *
- * Este arquivo demonstra a sintaxe do Pest PHP para testes unitários.
- * Para executar estes testes, você precisa configurar um banco de dados de testes.
- * Por enquanto, os testes estão marcados como 'skip' para demonstração.
+ * Este arquivo demonstra a sintaxe do Pest PHP para testes de integração.
+ * Os testes usam banco de dados em memória (SQLite) configurado automaticamente.
  */
 
 beforeEach(function () {
@@ -54,7 +53,7 @@ test('pode buscar usuario por email', function () {
         ->toBeArray()
         ->and($resultado['email'])->toBe('emailteste@example.com')
         ->and($resultado['nome'])->toBe('Usuario Email');
-})->skip('Configure o banco de dados de testes antes de executar');
+});
 
 test('retorna null quando usuario nao existe por id', function () {
     // Act
@@ -62,7 +61,7 @@ test('retorna null quando usuario nao existe por id', function () {
 
     // Assert
     expect($resultado)->toBeNull();
-})->skip('Configure o banco de dados de testes antes de executar');
+});
 
 test('retorna null quando usuario nao existe por email', function () {
     // Act
@@ -70,7 +69,7 @@ test('retorna null quando usuario nao existe por email', function () {
 
     // Assert
     expect($resultado)->toBeNull();
-})->skip('Configure o banco de dados de testes antes de executar');
+});
 
 test('pode criar um novo usuario', function () {
     // Arrange
@@ -89,7 +88,7 @@ test('pode criar um novo usuario', function () {
         ->and($resultado)->toBeArray()
         ->and($resultado['nome'])->toBe('Novo Usuario')
         ->and($resultado['email'])->toBe('novousuario@example.com');
-})->skip('Configure o banco de dados de testes antes de executar');
+});
 
 // Teste simples que funciona sem banco de dados
 test('model possui tabela correta configurada', function () {

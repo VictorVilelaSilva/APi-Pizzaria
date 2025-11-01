@@ -2,10 +2,8 @@
 
 namespace Modules\Usuario\Controllers;
 
-use App\DTO\LoginInputDTO;
-use App\Repositories\CI4Model\LoginRepository;
-use App\UseCases\Login\LoginUseCase;
-use App\UseCases\Register\RegisterUseCase;
+use App\Modules\Usuario\UseCases\LoginUseCase;
+use App\Modules\Usuario\UseCases\RegisterUseCase;
 use App\Validation\LoginValidation;
 use App\Validation\RegisterValidation;
 use CodeIgniter\RESTful\ResourceController;
