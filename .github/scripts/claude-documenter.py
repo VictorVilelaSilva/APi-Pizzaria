@@ -66,130 +66,185 @@ def create_notion_page(parent_id, title, content_blocks):
     
     return response.json()
 
-def ask_claude_for_analysis():
-    """Use Claude to analyze the changes and generate structured documentation"""
+def ask_claude_for_analysis(additional_files=[]):
+    """Use Claude to analyze the changes and generate structured documentation
+    
+    Args:
+        additional_files: Lista de caminhos de arquivos para anexar (imagens, PDFs, ou arquivos de texto)
+    """
     
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     
     prompt = f"""You are a technical documentation specialist analyzing a merged pull request for a CodeIgniter 4 pizzaria API project.
 
-# Project Context
-This is a modular CodeIgniter 4 API following these patterns:
-- Modular architecture with Controllers, Services, DTOs, Models
-- RESTful API endpoints
-- Database migrations organized by ticket (PDB folders)
-- Multi-database setup (default, message, accountDigital, oauth)
+        # Project Context
+        This is a modular CodeIgniter 4 API following these patterns:
+        - Modular architecture with Controllers, Services, DTOs, Models
+        - RESTful API endpoints
+        - Database migrations organized by ticket (PDB folders)
+        - Multi-database setup (default, message, accountDigital, oauth)
 
-# Task Information
-Ticket: {payload['ticket_number']}
-Branch: {payload['branch_name']}
-Description: {payload['short_description']}
-PR Title: {payload['pr_title']}
-Author: {payload['author']}
-Merge Date: {payload['merge_date']}
-Files Changed: {payload['files_changed']}
+        # Task Information
+        Ticket: {payload['ticket_number']}
+        Branch: {payload['branch_name']}
+        Description: {payload['short_description']}
+        PR Title: {payload['pr_title']}
+        Author: {payload['author']}
+        Merge Date: {payload['merge_date']}
+        Files Changed: {payload['files_changed']}
 
-# Changed Files
-{changes}
+        # Changed Files
+        {changes}
 
-# Commit History
-{commits}
+        # Commit History
+        {commits}
 
-# Code Diff (partial)
-{full_diff}
+        # Code Diff (partial)
+        {full_diff}
 
-# Your Task
-Analyze these changes and provide a structured JSON response for documentation following this EXACT format:
+        # Your Task
+        Analyze these changes and provide a structured JSON response for documentation following this EXACT format:
 
-{{
-  "overview": {{
-    "summary": "Brief 2-3 sentence summary of what was implemented",
-    "business_context": "What business problem does this solve?",
-    "status": "Completed"
-  }},
-  "technical_details": {{
-    "changes_made": [
-      "Bullet point 1 of changes",
-      "Bullet point 2 of changes"
-    ],
-    "database_changes": [
-      "Migration details if any, or empty array"
-    ],
-    "integration_points": [
-      "External integrations if any, or empty array"
-    ]
-  }},
-  "endpoints": [
-    {{
-      "method": "POST",
-      "path": "/api/endpoint/path",
-      "description": "What this endpoint does",
-      "file_location": "app/Modules/ModuleName/Controllers/ControllerName.php",
-      "request_params": {{
-        "param1": "string - description",
-        "param2": "integer - description"
-      }},
-      "request_headers": {{
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json"
-      }},
-      "request_example": {{
-        "param1": "example value",
-        "param2": 123
-      }},
-      "response_success": {{
-        "data": {{}},
-        "message": "Success message"
-      }},
-      "response_error": {{
-        "error": "Error message",
-        "code": "ERROR_CODE"
-      }},
-      "business_rules": [
-        "Rule 1 description",
-        "Rule 2 description"
-      ],
-      "validations": [
-        "Validation 1",
-        "Validation 2"
-      ]
-    }}
-  ],
-  "deployment_notes": {{
-    "environment_variables": [
-      "ENV_VAR_NAME - description"
-    ],
-    "configuration_changes": [
-      "Config change description"
-    ],
-    "migration_steps": [
-      "Migration step 1",
-      "Migration step 2"
-    ],
-    "dependencies": [
-      "New dependency 1"
-    ]
-  }}
-}}
+        {{
+        "overview": {{
+            "summary": "Brief 2-3 sentence summary of what was implemented",
+            "business_context": "What business problem does this solve?",
+            "status": "Completed"
+        }},
+        "technical_details": {{
+            "changes_made": [
+            "Bullet point 1 of changes",
+            "Bullet point 2 of changes"
+            ],
+            "database_changes": [
+            "Migration details if any, or empty array"
+            ],
+            "integration_points": [
+            "External integrations if any, or empty array"
+            ]
+        }},
+        "endpoints": [
+            {{
+            "method": "POST",
+            "path": "/api/endpoint/path",
+            "description": "What this endpoint does",
+            "file_location": "app/Modules/ModuleName/Controllers/ControllerName.php",
+            "request_params": {{
+                "param1": "string - description",
+                "param2": "integer - description"
+            }},
+            "request_headers": {{
+                "Authorization": "Bearer <token>",
+                "Content-Type": "application/json"
+            }},
+            "request_example": {{
+                "param1": "example value",
+                "param2": 123
+            }},
+            "response_success": {{
+                "data": {{}},
+                "message": "Success message"
+            }},
+            "response_error": {{
+                "error": "Error message",
+                "code": "ERROR_CODE"
+            }},
+            "business_rules": [
+                "Rule 1 description",
+                "Rule 2 description"
+            ],
+            "validations": [
+                "Validation 1",
+                "Validation 2"
+            ]
+            }}
+        ],
+        "deployment_notes": {{
+            "environment_variables": [
+            "ENV_VAR_NAME - description"
+            ],
+            "configuration_changes": [
+            "Config change description"
+            ],
+            "dependencies": [
+            "New dependency 1"
+            ]
+        }}
+        }}
 
-IMPORTANT INSTRUCTIONS:
-1. Analyze the actual code changes - don't make assumptions
-2. Only include endpoints that were actually created or modified
-3. Extract real parameter names from the code
-4. Be specific about file locations
-5. If no database changes, return empty array for database_changes
-6. If no endpoints were modified, return empty array for endpoints
-7. Focus on WHAT WAS DONE, not what will be done
-8. Use Brazilian Portuguese for business context and descriptions
-9. Keep technical terms in English (endpoints, parameters, etc)
+        IMPORTANT INSTRUCTIONS:
+        1.  Analyze the actual code changes - don't make assumptions
+        2.  Only include endpoints that were actually created or modified
+        3.  Extract real parameter names from the code
+        4.  Be specific about file locations
+        5.  If no database changes, return empty array for database_changes
+        6.  If no endpoints were modified, return empty array for endpoints
+        7.  Focus on WHAT WAS DONE, not what will be done
+        8.  Use Brazilian Portuguese for business context and descriptions
+        9.  Keep technical terms in English (endpoints, parameters, etc)
+        10. Describe the business rules in as much detail as possible
 
-Return ONLY valid JSON, no markdown formatting."""
+        Return ONLY valid JSON, no markdown formatting."""
 
+    # Construir conteúdo da mensagem com arquivos (se houver)
+    content = []
+    
+    # Adicionar arquivos primeiro (imagens/PDFs)
+    for file_path in additional_files:
+        if not os.path.exists(file_path):
+            print(f"⚠️  Arquivo não encontrado: {file_path}")
+            continue
+        
+        file_ext = os.path.splitext(file_path)[1].lower()
+        
+        # Arquivos de imagem/PDF (Vision API)
+        if file_ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf']:
+            import base64
+            with open(file_path, 'rb') as f:
+                file_data = base64.standard_b64encode(f.read()).decode('utf-8')
+            
+            # Mapear tipo de mídia
+            media_type_map = {
+                '.pdf': 'application/pdf',
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            }
+            
+            media_type = media_type_map.get(file_ext)
+            doc_type = "document" if file_ext == '.pdf' else "image"
+            
+            content.append({
+                "type": doc_type,
+                "source": {
+                    "type": "base64",
+                    "media_type": media_type,
+                    "data": file_data
+                }
+            })
+            print(f"📎 Arquivo anexado: {os.path.basename(file_path)} ({doc_type})")
+        
+        # Arquivos de texto (adicionar ao prompt)
+        elif file_ext in ['.txt', '.md', '.json', '.php', '.py', '.js']:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+            
+            prompt += f"\n\n# Arquivo anexado: {os.path.basename(file_path)}\n```\n{file_content[:10000]}\n```"
+            print(f"📄 Arquivo de texto anexado: {os.path.basename(file_path)}")
+    
+    # Adicionar o prompt de texto
+    content.append({
+        "type": "text",
+        "text": prompt
+    })
+    
     message = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=4096,
+        model="claude-opus-4-1-20250805",
+        max_tokens=20000,
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": content if len(content) > 1 else prompt}
         ]
     )
     
@@ -710,8 +765,20 @@ def main():
     
     # Step 1: Analyze changes with Claude
     print("🤖 Analisando alterações com Claude AI...")
+    
+    # Opcionalmente, adicionar arquivos extras
+    # Exemplo: diagramas, screenshots, arquivos de configuração específicos
+    additional_files = []
+    
+    # Buscar arquivos de diagrama na PR (se existirem)
+    diagram_extensions = ['.png', '.jpg', '.jpeg', '.pdf']
+    if os.path.exists('pr-files'):
+        for file in os.listdir('pr-files'):
+            if any(file.endswith(ext) for ext in diagram_extensions):
+                additional_files.append(os.path.join('pr-files', file))
+    
     try:
-        analysis = ask_claude_for_analysis()
+        analysis = ask_claude_for_analysis(additional_files)
         print("✅ Análise concluída!")
         print(f"   - Endpoints detectados: {len(analysis['endpoints'])}")
         print(f"   - Alterações de DB: {len(analysis['technical_details']['database_changes'])}")
