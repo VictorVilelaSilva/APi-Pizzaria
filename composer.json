@@ -15,7 +15,9 @@
         "firebase/php-jwt": "^6.11"
     },
     "require-dev": {
+        "composer/composer": "^2.8",
         "fakerphp/faker": "^1.9",
+        "kint-php/kint": "^6.0",
         "mikey179/vfsstream": "^1.6",
         "pestphp/pest": "^2.36",
         "phpunit/phpunit": "^10.5.16"
@@ -42,7 +44,8 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true
-        }
+        },
+        "platform-check": false
     },
     "scripts": {
         "test": "pest",
