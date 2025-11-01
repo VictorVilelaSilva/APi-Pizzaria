@@ -9,7 +9,7 @@ import os
 import json
 import sys
 from anthropic import Anthropic
-import requests
+import httpx
 from datetime import datetime
 
 # Configuration
@@ -57,14 +57,15 @@ def create_notion_page(parent_id, title, content_blocks):
         'children': content_blocks
     }
     
-    response = requests.post(url, headers=headers, json=data)
-    
-    if not response.ok:
-        print(f"❌ Notion API Error: {response.status_code}")
-        print(response.text)
-        raise Exception(f"Failed to create Notion page: {response.text}")
-    
-    return response.json()
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            print(f"❌ Notion API Error: {response.status_code}")
+            print(response.text)
+            raise Exception(f"Failed to create Notion page: {response.text}")
+        
+        return response.json()
 
 def ask_claude_for_analysis():
     """Use Claude to analyze the changes and generate structured documentation"""
@@ -73,117 +74,117 @@ def ask_claude_for_analysis():
     
     prompt = f"""You are a technical documentation specialist analyzing a merged pull request for a CodeIgniter 4 pizzaria API project.
 
-# Project Context
-This is a modular CodeIgniter 4 API following these patterns:
-- Modular architecture with Controllers, Services, DTOs, Models
-- RESTful API endpoints
-- Database migrations organized by ticket (PDB folders)
-- Multi-database setup (default, message, accountDigital, oauth)
+        # Project Context
+        This is a modular CodeIgniter 4 API following these patterns:
+        - Modular architecture with Controllers, Services, DTOs, Models
+        - RESTful API endpoints
+        - Database migrations organized by ticket (PDB folders)
+        - Multi-database setup (default, message, accountDigital, oauth)
 
-# Task Information
-Ticket: {payload['ticket_number']}
-Branch: {payload['branch_name']}
-Description: {payload['short_description']}
-PR Title: {payload['pr_title']}
-Author: {payload['author']}
-Merge Date: {payload['merge_date']}
-Files Changed: {payload['files_changed']}
+        # Task Information
+        Ticket: {payload['ticket_number']}
+        Branch: {payload['branch_name']}
+        Description: {payload['short_description']}
+        PR Title: {payload['pr_title']}
+        Author: {payload['author']}
+        Merge Date: {payload['merge_date']}
+        Files Changed: {payload['files_changed']}
 
-# Changed Files
-{changes}
+        # Changed Files
+        {changes}
 
-# Commit History
-{commits}
+        # Commit History
+        {commits}
 
-# Code Diff (partial)
-{full_diff}
+        # Code Diff (partial)
+        {full_diff}
 
-# Your Task
-Analyze these changes and provide a structured JSON response for documentation following this EXACT format:
+        # Your Task
+        Analyze these changes and provide a structured JSON response for documentation following this EXACT format:
 
-{{
-  "overview": {{
-    "summary": "Brief 2-3 sentence summary of what was implemented",
-    "business_context": "What business problem does this solve?",
-    "status": "Completed"
-  }},
-  "technical_details": {{
-    "changes_made": [
-      "Bullet point 1 of changes",
-      "Bullet point 2 of changes"
-    ],
-    "database_changes": [
-      "Migration details if any, or empty array"
-    ],
-    "integration_points": [
-      "External integrations if any, or empty array"
-    ]
-  }},
-  "endpoints": [
-    {{
-      "method": "POST",
-      "path": "/api/endpoint/path",
-      "description": "What this endpoint does",
-      "file_location": "app/Modules/ModuleName/Controllers/ControllerName.php",
-      "request_params": {{
-        "param1": "string - description",
-        "param2": "integer - description"
-      }},
-      "request_headers": {{
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json"
-      }},
-      "request_example": {{
-        "param1": "example value",
-        "param2": 123
-      }},
-      "response_success": {{
-        "data": {{}},
-        "message": "Success message"
-      }},
-      "response_error": {{
-        "error": "Error message",
-        "code": "ERROR_CODE"
-      }},
-      "business_rules": [
-        "Rule 1 description",
-        "Rule 2 description"
-      ],
-      "validations": [
-        "Validation 1",
-        "Validation 2"
-      ]
-    }}
-  ],
-  "deployment_notes": {{
-    "environment_variables": [
-      "ENV_VAR_NAME - description"
-    ],
-    "configuration_changes": [
-      "Config change description"
-    ],
-    "migration_steps": [
-      "Migration step 1",
-      "Migration step 2"
-    ],
-    "dependencies": [
-      "New dependency 1"
-    ]
-  }}
-}}
+        {{
+        "overview": {{
+            "summary": "Brief 2-3 sentence summary of what was implemented",
+            "business_context": "What business problem does this solve?",
+            "status": "Completed"
+        }},
+        "technical_details": {{
+            "changes_made": [
+            "Bullet point 1 of changes",
+            "Bullet point 2 of changes"
+            ],
+            "database_changes": [
+            "Migration details if any, or empty array"
+            ],
+            "integration_points": [
+            "External integrations if any, or empty array"
+            ]
+        }},
+        "endpoints": [
+            {{
+            "method": "POST",
+            "path": "/api/endpoint/path",
+            "description": "What this endpoint does",
+            "file_location": "app/Modules/ModuleName/Controllers/ControllerName.php",
+            "request_params": {{
+                "param1": "string - description",
+                "param2": "integer - description"
+            }},
+            "request_headers": {{
+                "Authorization": "Bearer <token>",
+                "Content-Type": "application/json"
+            }},
+            "request_example": {{
+                "param1": "example value",
+                "param2": 123
+            }},
+            "response_success": {{
+                "data": {{}},
+                "message": "Success message"
+            }},
+            "response_error": {{
+                "error": "Error message",
+                "code": "ERROR_CODE"
+            }},
+            "business_rules": [
+                "Rule 1 description",
+                "Rule 2 description"
+            ],
+            "validations": [
+                "Validation 1",
+                "Validation 2"
+            ]
+            }}
+        ],
+        "deployment_notes": {{
+            "environment_variables": [
+            "ENV_VAR_NAME - description"
+            ],
+            "configuration_changes": [
+            "Config change description"
+            ],
+            "migration_steps": [
+            "Migration step 1",
+            "Migration step 2"
+            ],
+            "dependencies": [
+            "New dependency 1"
+            ]
+        }}
+        }}
 
-IMPORTANT INSTRUCTIONS:
-1. Analyze the actual code changes - don't make assumptions
-2. Only include endpoints that were actually created or modified
-3. Extract real parameter names from the code
-4. Be specific about file locations
-5. If no database changes, return empty array for database_changes
-6. If no endpoints were modified, return empty array for endpoints
-7. Focus on WHAT WAS DONE, not what will be done
-8. Use Brazilian Portuguese for business context and descriptions
-9. Keep technical terms in English (endpoints, parameters, etc)
+        IMPORTANT INSTRUCTIONS:
+        1. Analyze the actual code changes - don't make assumptions
+        2. Only include endpoints that were actually created or modified
+        3. Extract real parameter names from the code
+        4. Be specific about file locations
+        5. If no database changes, return empty array for database_changes
+        6. If no endpoints were modified, return empty array for endpoints
+        7. Focus on WHAT WAS DONE, not what will be done
+        8. Use Brazilian Portuguese for business context and descriptions
+        9. Keep technical terms in English (endpoints, parameters, etc)
 
-Return ONLY valid JSON, no markdown formatting."""
+        Return ONLY valid JSON, no markdown formatting."""
 
     message = client.messages.create(
         model="claude-sonnet-4-5-20250929",
