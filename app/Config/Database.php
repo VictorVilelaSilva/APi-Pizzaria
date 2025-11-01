@@ -49,13 +49,14 @@ class Database extends Config
     //         'time'     => 'H:i:s',
     //     ],
     // ];
+
     public array $default = [
         'DSN'          => '',
-        'hostname'     => '',
-        'username'     => '',
-        'password'     => '',
-        'database'     => WRITEPATH . 'database/pizzaria.db',
-        'DBDriver'     => 'SQLite3',
+        'hostname'     => 'localhost',
+        'username'     => 'root',
+        'password'     => 'root',
+        'database'     => 'ci4',
+        'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
         'DBDebug'      => true,
@@ -215,6 +216,27 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Allow environment variables to override defaults (cannot call getenv() in property declarations)
+        $host = getenv('DB_HOST');
+        if ($host !== false && $host !== '') {
+            $this->default['hostname'] = $host;
+        }
+
+        $user = getenv('DB_USERNAME');
+        if ($user !== false && $user !== '') {
+            $this->default['username'] = $user;
+        }
+
+        $pass = getenv('DB_PASSWORD');
+        if ($pass !== false) {
+            $this->default['password'] = $pass;
+        }
+
+        $db = getenv('DB_DATABASE');
+        if ($db !== false && $db !== '') {
+            $this->default['database'] = $db;
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that

@@ -5,11 +5,12 @@ namespace Modules\Usuario\Controllers;
 use App\DTO\LoginInputDTO;
 use App\Libraries\JWT\JWTService;
 use App\Repositories\CI4Model\LoginRepository;
-use App\UseCases\Login\LoginUseCase;
-use App\UseCases\Register\RegisterUseCase;
+use App\Modules\Usuario\UseCases\LoginUseCase;
+use App\Modules\Usuario\UseCases\RegisterUseCase;
 use App\Validation\LoginValidation;
 use App\Validation\RegisterValidation;
 use CodeIgniter\RESTful\ResourceController;
+use Config\ErrorTrait;
 
 class UsuarioController extends ResourceController
 {
@@ -37,14 +38,21 @@ class UsuarioController extends ResourceController
 
     public function Register()
     {
-        $bodyRequest = $this->request->getJSON(true);
-        RegisterValidation::execute('QUERY', $bodyRequest, 'ERROR-REGISTER-001');
-        $data = (new RegisterUseCase())->execute($bodyRequest);
-        return $this->respond(
-            [
-                'message'       => 'Registro realizado com sucesso',
-                'data'          => $data
-            ]
-        );
+        try {
+            $bodyRequest = $this->request->getJSON(true);
+            RegisterValidation::execute('QUERY', $bodyRequest, 'ERROR-REGISTER-001');
+            $data = (new RegisterUseCase())->execute($bodyRequest);
+            return $this->respond(
+                [
+                    'message' => 'Registro realizado com sucesso',
+                    'data'    => $data
+                ]
+            );
+        } catch (ErrorTrait $e) {
+            return $this->respond(
+                $e->getPayload(),
+                $e->getStatusCode()
+            );
+        }
     }
 }

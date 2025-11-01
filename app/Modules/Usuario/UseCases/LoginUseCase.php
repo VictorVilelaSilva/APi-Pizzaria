@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCases\Login;
+namespace App\Modules\Usuario\UseCases;
 
 use App\Models\UsuariosModel;
 use Config\ErrorTrait;

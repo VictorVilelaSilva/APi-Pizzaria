@@ -18,6 +18,7 @@
         "fakerphp/faker": "^1.9",
         "kint-php/kint": "^6.0",
         "mikey179/vfsstream": "^1.6",
+        "pestphp/pest": "^2.36",
         "phpunit/phpunit": "^10.5.16"
     },
     "autoload": {
@@ -32,16 +33,22 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Tests\\": "tests/",
             "Tests\\Support\\": "tests/_support"
         }
     },
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "scripts": {
-        "test:unit": "phpunit --testsuite unit --coverage-html coverage",
-        "test:integration": "phpunit --testsuite integration --coverage-html coverage"
+        "test": "pest",
+        "test:unit": "pest --testsuite=unit",
+        "test:feature": "pest --testsuite=feature",
+        "test:coverage": "pest --coverage"
     }
 }
