@@ -16,7 +16,8 @@
 2. Clique nos **3 pontinhos** (⋯) no canto superior direito
 3. Selecione **"Add connections"**
 4. Procure e adicione **"GitHub Auto-Documenter"**
-5. **Copie o ID da página** da URL:
+5. Dê permissão de acesso á página para a integração
+6. **Copie o ID da página** da URL:
    ```
    https://www.notion.so/seu-workspace/Pizzaria-API-a1b2c3d4e5f67890abcdef1234567890
                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -30,8 +31,6 @@
 3. Vá para **"API Keys"**
 4. Clique em **"Create Key"**
 5. **Copie a chave** (começa com `sk-ant-...`)
-
-> 💡 Você ganha $5 USD em créditos gratuitos!
 
 ## Passo 4: Configurar Secrets no GitHub (1 min)
 
@@ -79,10 +78,6 @@ Agora toda vez que você mergear um PR para `main`, a documentação será criad
 
 ---
 
-## 📚 Quer Saber Mais?
-
-Veja o guia completo: [README.md](.github/workflows/README.md)
-
 ## ❓ Problemas?
 
 ### Documentação não foi criada
@@ -100,5 +95,4 @@ Veja o guia completo: [README.md](.github/workflows/README.md)
 
 ---
 
-**Tempo total**: ~5 minutos  
-**Custo**: Gratuito (com créditos iniciais do Claude)
+**Tempo total**: ~5 minutos

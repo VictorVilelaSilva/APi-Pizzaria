@@ -1,16 +1,6 @@
 ---
 description: 'A chat mode for documenting Jira development tasks in Notion pages using the Notion MCP server.'
-tools: 
-  - 'search'
-  - 'runCommands'
-  - 'GitKraken/git_branch'
-  - 'GitKraken/git_checkout'
-  - 'GitKraken/git_status'
-  - 'GitKraken/git_log_or_diff'
-  - 'makenotion/notion-mcp-server/*'
-  - 'changes'
-  - 'fetch'
-  - 'githubRepo'
+tools: ['search', 'runCommands', 'GitKraken/git_branch', 'GitKraken/git_checkout', 'GitKraken/git_log_or_diff', 'GitKraken/git_status', 'makenotion/notion-mcp-server/*', 'changes', 'fetch', 'githubRepo']
 ---
 
 # Documenter Chat Mode

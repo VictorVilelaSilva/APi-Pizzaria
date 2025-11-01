@@ -9,7 +9,7 @@ import os
 import json
 import sys
 from anthropic import Anthropic
-import httpx
+import requests
 from datetime import datetime
 
 # Configuration
@@ -37,7 +37,7 @@ except:
     full_diff = "Diff too large to include"
 
 def create_notion_page(parent_id, title, content_blocks):
-    """Create a page in Notion using HTTPX"""
+    """Create a page in Notion"""
     url = f"{NOTION_API_BASE}/pages"
     headers = {
         'Authorization': f'Bearer {NOTION_API_KEY}',
@@ -57,92 +57,23 @@ def create_notion_page(parent_id, title, content_blocks):
         'children': content_blocks
     }
     
-    with httpx.Client(timeout=300.0) as client:  # 5 minutes timeout
-        response = client.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data)
     
-    if response.status_code not in [200, 201]:
+    if not response.ok:
         print(f"❌ Notion API Error: {response.status_code}")
         print(response.text)
         raise Exception(f"Failed to create Notion page: {response.text}")
     
     return response.json()
 
-def extract_controller_files(changes_text):
-    """Extract controller file paths from changes"""
-    controller_files = []
-    for line in changes_text.split('\n'):
-        if 'Controllers/' in line and line.strip().endswith('.php'):
-            # Extract just the file path
-            parts = line.strip().split()
-            if parts:
-                file_path = parts[0] if not parts[0].startswith(('M', 'A', 'D')) else parts[1] if len(parts) > 1 else None
-                if file_path and 'Controllers/' in file_path:
-                    controller_files.append(file_path)
-    return controller_files
-
-def extract_migration_files(changes_text):
-    """Extract migration file paths from changes"""
-    migration_files = []
-    for line in changes_text.split('\n'):
-        if 'Migrations/' in line and line.strip().endswith('.php'):
-            parts = line.strip().split()
-            if parts:
-                file_path = parts[0] if not parts[0].startswith(('M', 'A', 'D')) else parts[1] if len(parts) > 1 else None
-                if file_path and 'Migrations/' in file_path:
-                    migration_files.append(file_path)
-    return migration_files
-
-def ask_claude_with_cache(client, prompt, use_cache=True):
-    """Make a Claude API call with optional caching
+def ask_claude_for_analysis():
+    """Use Claude to analyze the changes and generate structured documentation"""
     
-    Args:
-        client: Anthropic client instance
-        prompt: The prompt text or list of content blocks
-        use_cache: Whether to use prompt caching (default True)
-    
-    Returns:
-        Parsed JSON response
-    """
-    # Build message content with cache control if enabled
-    if use_cache and isinstance(prompt, str):
-        content = [
-            {
-                "type": "text",
-                "text": prompt,
-                "cache_control": {"type": "ephemeral"}
-            }
-        ]
-    elif isinstance(prompt, list):
-        content = prompt
-    else:
-        content = prompt
-    
-    response = client.messages.create(
-        model="claude-opus-4-20250514",
-        max_tokens=8000,
-        messages=[
-            {"role": "user", "content": content}
-        ]
-    )
-    
-    response_text = response.content[0].text
-    
-    # Remove markdown code blocks if present
-    if response_text.startswith('```'):
-        response_text = response_text.split('```')[1]
-        if response_text.startswith('json'):
-            response_text = response_text[4:]
-        response_text = response_text.strip()
-    
-    return json.loads(response_text)
-
-def ask_claude_overview():
-    """Step 1: Analyze overview and business context (fast, cacheable)"""
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     
     prompt = f"""You are a technical documentation specialist analyzing a merged pull request for a CodeIgniter 4 pizzaria API project.
 
-# Project Context (CACHEABLE)
+# Project Context
 This is a modular CodeIgniter 4 API following these patterns:
 - Modular architecture with Controllers, Services, DTOs, Models
 - RESTful API endpoints
@@ -164,258 +95,114 @@ Files Changed: {payload['files_changed']}
 # Commit History
 {commits}
 
+# Code Diff (partial)
+{full_diff}
+
 # Your Task
-Provide a high-level overview analysis in JSON format:
+Analyze these changes and provide a structured JSON response for documentation following this EXACT format:
 
 {{
   "overview": {{
-    "summary": "Brief 2-3 sentence summary of what was implemented in Brazilian Portuguese",
-    "business_context": "What business problem does this solve? (Brazilian Portuguese)",
+    "summary": "Brief 2-3 sentence summary of what was implemented",
+    "business_context": "What business problem does this solve?",
     "status": "Completed"
   }},
   "technical_details": {{
     "changes_made": [
-      "Bullet point 1 of technical changes made (Brazilian Portuguese)",
-      "Bullet point 2 of technical changes made (Brazilian Portuguese)"
-    ]
-  }}
-}}
-
-INSTRUCTIONS:
-- Focus on WHAT WAS DONE (past tense), not what will be done
-- Use Brazilian Portuguese for descriptions
-- Be concise but informative
-- Return ONLY valid JSON, no markdown formatting"""
-
-    print("📋 Step 1/4: Analisando overview e contexto de negócio...")
-    result = ask_claude_with_cache(client, prompt, use_cache=True)
-    print("   ✅ Overview completo")
-    return result
-
-def ask_claude_endpoints(controller_files):
-    """Step 2: Analyze endpoints from controller files (parallel possible)"""
-    if not controller_files:
-        print("📡 Step 2/4: Nenhum controller modificado, pulando análise de endpoints...")
-        return []
-    
-    client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    all_endpoints = []
-    
-    print(f"📡 Step 2/4: Analisando {len(controller_files)} controller(s)...")
-    
-    for i, controller_file in enumerate(controller_files, 1):
-        # Get relevant diff for this file
-        file_diff = ""
-        if controller_file in full_diff:
-            # Extract diff section for this file (simplified)
-            start_idx = full_diff.find(controller_file)
-            if start_idx != -1:
-                end_idx = full_diff.find("diff --git", start_idx + 1)
-                file_diff = full_diff[start_idx:end_idx if end_idx != -1 else start_idx + 5000]
-        
-        prompt = f"""Analyze this controller file from a CodeIgniter 4 API project.
-
-File: {controller_file}
-
-Code Changes:
-{file_diff[:3000]}
-
-Return JSON array of endpoints found in this file:
-
-[
-  {{
-    "method": "POST|GET|PUT|DELETE",
-    "path": "/api/exact/path",
-    "description": "What this endpoint does (Brazilian Portuguese)",
-    "file_location": "{controller_file}",
-    "request_params": {{
-      "param1": "type - description in Portuguese"
-    }},
-    "request_headers": {{
-      "Authorization": "Bearer <token>",
-      "Content-Type": "application/json"
-    }},
-    "request_example": {{
-      "param1": "example_value"
-    }},
-    "response_success": {{
-      "data": {{}},
-      "message": "Success"
-    }},
-    "response_error": {{
-      "error": "Error message",
-      "code": "ERROR_CODE"
-    }},
-    "business_rules": [
-      "Business rule 1 in Portuguese"
+      "Bullet point 1 of changes",
+      "Bullet point 2 of changes"
     ],
-    "validations": [
-      "Validation 1 in Portuguese"
+    "database_changes": [
+      "Migration details if any, or empty array"
+    ],
+    "integration_points": [
+      "External integrations if any, or empty array"
     ]
-  }}
-]
-
-IMPORTANT:
-- Only include endpoints ACTUALLY in this file
-- Extract real parameter names from code
-- Use Brazilian Portuguese for descriptions
-- Return empty array [] if no endpoints found
-- Return ONLY valid JSON"""
-
-        try:
-            endpoints = ask_claude_with_cache(client, prompt, use_cache=False)
-            if endpoints:
-                all_endpoints.extend(endpoints)
-                print(f"   ✅ [{i}/{len(controller_files)}] {controller_file}: {len(endpoints)} endpoint(s)")
-            else:
-                print(f"   ⚠️  [{i}/{len(controller_files)}] {controller_file}: nenhum endpoint encontrado")
-        except Exception as e:
-            print(f"   ❌ [{i}/{len(controller_files)}] Erro ao analisar {controller_file}: {e}")
-    
-    return all_endpoints
-
-def ask_claude_database(migration_files):
-    """Step 3: Analyze database changes from migrations"""
-    if not migration_files:
-        print("🗄️  Step 3/4: Nenhuma migration encontrada, pulando análise de DB...")
-        return {"database_changes": [], "integration_points": []}
-    
-    client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    
-    migrations_context = "\n".join([f"- {mf}" for mf in migration_files])
-    
-    prompt = f"""Analyze database migrations from a CodeIgniter 4 project.
-
-Migration Files:
-{migrations_context}
-
-Code Context (partial):
-{full_diff[:5000]}
-
-Return JSON with database analysis:
-
-{{
-  "database_changes": [
-    "Description of table/column change 1 (Brazilian Portuguese)",
-    "Description of table/column change 2 (Brazilian Portuguese)"
+  }},
+  "endpoints": [
+    {{
+      "method": "POST",
+      "path": "/api/endpoint/path",
+      "description": "What this endpoint does",
+      "file_location": "app/Modules/ModuleName/Controllers/ControllerName.php",
+      "request_params": {{
+        "param1": "string - description",
+        "param2": "integer - description"
+      }},
+      "request_headers": {{
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+      }},
+      "request_example": {{
+        "param1": "example value",
+        "param2": 123
+      }},
+      "response_success": {{
+        "data": {{}},
+        "message": "Success message"
+      }},
+      "response_error": {{
+        "error": "Error message",
+        "code": "ERROR_CODE"
+      }},
+      "business_rules": [
+        "Rule 1 description",
+        "Rule 2 description"
+      ],
+      "validations": [
+        "Validation 1",
+        "Validation 2"
+      ]
+    }}
   ],
-  "integration_points": [
-    "External integration or system connection if any (Brazilian Portuguese)"
-  ]
-}}
-
-INSTRUCTIONS:
-- Focus on DDL changes (tables, columns, indexes)
-- Mention DML changes if important (seeds, data updates)
-- Use Brazilian Portuguese
-- Return empty arrays if nothing found
-- Return ONLY valid JSON"""
-
-    print(f"🗄️  Step 3/4: Analisando {len(migration_files)} migration(s)...")
-    result = ask_claude_with_cache(client, prompt, use_cache=False)
-    print("   ✅ Análise de banco completa")
-    return result
-
-def ask_claude_deployment():
-    """Step 4: Analyze deployment requirements"""
-    client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    
-    prompt = f"""Analyze deployment requirements from these changes.
-
-Files Changed:
-{changes}
-
-Commits:
-{commits}
-
-Return JSON with deployment notes:
-
-{{
   "deployment_notes": {{
     "environment_variables": [
-      "ENV_VAR - description (if any new vars needed)"
+      "ENV_VAR_NAME - description"
     ],
     "configuration_changes": [
-      "Config change description (if any)"
+      "Config change description"
     ],
     "migration_steps": [
-      "Step 1 to deploy",
-      "Step 2 to deploy"
+      "Migration step 1",
+      "Migration step 2"
     ],
     "dependencies": [
-      "New composer package (if any)"
+      "New dependency 1"
     ]
   }}
 }}
 
-INSTRUCTIONS:
-- Only include if actually needed
-- Use Brazilian Portuguese for descriptions
-- Return empty arrays if nothing needed
-- Return ONLY valid JSON"""
+IMPORTANT INSTRUCTIONS:
+1. Analyze the actual code changes - don't make assumptions
+2. Only include endpoints that were actually created or modified
+3. Extract real parameter names from the code
+4. Be specific about file locations
+5. If no database changes, return empty array for database_changes
+6. If no endpoints were modified, return empty array for endpoints
+7. Focus on WHAT WAS DONE, not what will be done
+8. Use Brazilian Portuguese for business context and descriptions
+9. Keep technical terms in English (endpoints, parameters, etc)
 
-    print("🚀 Step 4/4: Analisando requisitos de deployment...")
-    result = ask_claude_with_cache(client, prompt, use_cache=False)
-    print("   ✅ Análise de deployment completa")
-    return result
+Return ONLY valid JSON, no markdown formatting."""
 
-def ask_claude_for_analysis(additional_files=[]):
-    """Orchestrate chunked analysis with caching
+    message = client.messages.create(
+        model="claude-sonnet-4-5-20250929",
+        max_tokens=8000,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
     
-    This breaks down the analysis into 4 focused steps:
-    1. Overview + Business Context (cached, fast)
-    2. Endpoints Analysis (per controller file)
-    3. Database Changes (if migrations exist)
-    4. Deployment Notes
+    response_text = message.content[0].text
     
-    Total time: 4-7 minutes (well under 10min limit)
-    """
+    # Remove markdown code blocks if present
+    if response_text.startswith('```'):
+        response_text = response_text.split('```')[1]
+        if response_text.startswith('json'):
+            response_text = response_text[4:]
+        response_text = response_text.strip()
     
-    print("🤖 Iniciando análise chunked com Claude AI...")
-    print("=" * 60)
-    
-    # Extract relevant files for targeted analysis
-    controller_files = extract_controller_files(changes)
-    migration_files = extract_migration_files(changes)
-    
-    print(f"📊 Arquivos identificados:")
-    print(f"   - Controllers: {len(controller_files)}")
-    print(f"   - Migrations: {len(migration_files)}")
-    print()
-    
-    # Step 1: Overview (1-2 min)
-    overview_result = ask_claude_overview()
-    
-    # Step 2: Endpoints (1-3 min depending on number of files)
-    endpoints = ask_claude_endpoints(controller_files)
-    
-    # Step 3: Database (1-2 min if migrations exist)
-    db_result = ask_claude_database(migration_files)
-    
-    # Step 4: Deployment (1 min)
-    deployment_result = ask_claude_deployment()
-    
-    # Merge all results
-    final_analysis = {
-        "overview": overview_result.get("overview", {}),
-        "technical_details": {
-            "changes_made": overview_result.get("technical_details", {}).get("changes_made", []),
-            "database_changes": db_result.get("database_changes", []),
-            "integration_points": db_result.get("integration_points", [])
-        },
-        "endpoints": endpoints,
-        "deployment_notes": deployment_result.get("deployment_notes", {})
-    }
-    
-    print()
-    print("=" * 60)
-    print("✅ Análise chunked completa!")
-    print(f"   📋 Overview: OK")
-    print(f"   📡 Endpoints: {len(endpoints)}")
-    print(f"   🗄️  DB Changes: {len(final_analysis['technical_details']['database_changes'])}")
-    print(f"   🚀 Deployment: OK")
-    
-    return final_analysis
+    return json.loads(response_text)
 
 def build_main_page_blocks(analysis):
     """Build Notion blocks for the main task page"""
@@ -674,7 +461,7 @@ def build_main_page_blocks(analysis):
                 }
             })
     
-    if deployment.get('migration_steps'):
+    if deployment['migration_steps']:
         blocks.append({
             'object': 'block',
             'type': 'heading_3',
@@ -709,8 +496,8 @@ def build_main_page_blocks(analysis):
             })
     
     # If no deployment notes, add placeholder
-    if not any([deployment.get('environment_variables'), deployment.get('configuration_changes'), 
-                deployment.get('migration_steps'), deployment.get('dependencies')]):
+    if not any([deployment['environment_variables'], deployment['configuration_changes'], 
+                deployment['migration_steps'], deployment['dependencies']]):
         blocks.append({
             'object': 'block',
             'type': 'callout',
@@ -923,20 +710,8 @@ def main():
     
     # Step 1: Analyze changes with Claude
     print("🤖 Analisando alterações com Claude AI...")
-    
-    # Opcionalmente, adicionar arquivos extras
-    # Exemplo: diagramas, screenshots, arquivos de configuração específicos
-    additional_files = []
-    
-    # Buscar arquivos de diagrama na PR (se existirem)
-    diagram_extensions = ['.png', '.jpg', '.jpeg', '.pdf']
-    if os.path.exists('pr-files'):
-        for file in os.listdir('pr-files'):
-            if any(file.endswith(ext) for ext in diagram_extensions):
-                additional_files.append(os.path.join('pr-files', file))
-    
     try:
-        analysis = ask_claude_for_analysis(additional_files)
+        analysis = ask_claude_for_analysis()
         print("✅ Análise concluída!")
         print(f"   - Endpoints detectados: {len(analysis['endpoints'])}")
         print(f"   - Alterações de DB: {len(analysis['technical_details']['database_changes'])}")
